@@ -8,27 +8,27 @@ import androidx.compose.runtime.Composable
 
 
 private val DarkColorPalette = darkColors(
-        primary = purple200,
-        primaryVariant = purple700,
-        secondary = teal200,
-        background = black,
-        surface = black,
-        onPrimary = black,
-        onSecondary = white,
-        onBackground = white,
-        onSurface = white,
+    primary = orange,
+    primaryVariant = orange,
+    secondary = orange,
+    background = black,
+    surface = dark,
+    onPrimary = black,
+    onSecondary = white,
+    onBackground = white,
+    onSurface = onDark,
 )
 
 private val LightColorPalette = lightColors(
-        primary = purple500,
-        primaryVariant = purple700,
-        secondary = teal200,
-        background = white,
-        surface = white,
-        onPrimary = white,
-        onSecondary = black,
-        onBackground = black,
-        onSurface = black,
+    primary = orange,
+    primaryVariant = orange,
+    secondary = orange,
+    background = white,
+    surface = light,
+    onPrimary = white,
+    onSecondary = black,
+    onBackground = black,
+    onSurface = dark,
 )
 
 @Composable
@@ -40,9 +40,9 @@ fun WalkmanTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composabl
     }
 
     MaterialTheme(
-            colors = colors,
-            typography = typography,
-            shapes = shapes,
-            content = content
+        colors = DarkColorPalette,
+        typography = typography,
+        shapes = shapes,
+        content = content
     )
 }

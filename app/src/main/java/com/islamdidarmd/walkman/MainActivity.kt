@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.setContent
 import androidx.ui.tooling.preview.Preview
 import com.islamdidarmd.walkman.ui.core.WalkmanTheme
+import com.islamdidarmd.walkman.ui.screen.AllSongs
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,8 +23,8 @@ class MainActivity : AppCompatActivity() {
 }
 
 @Composable
-fun App(){
-
+fun App() {
+    AllSongs()
 }
 
 @Preview(showBackground = true)
