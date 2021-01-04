@@ -1,125 +1,154 @@
 package com.islamdidarmd.walkman.ui.screen
 
+import android.net.Uri
+import android.text.format.DateUtils
+import android.util.Log
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.ColumnScope.gravity
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyColumnForIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.compose.material.*
+import androidx.compose.material.Icon
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawShadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.islamdidarmd.walkman.R
-import com.islamdidarmd.walkman.ui.core.*
+import com.islamdidarmd.walkman.data.model.PlayListItem
+import com.islamdidarmd.walkman.ui.core.typography
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.material.Text
+import androidx.compose.ui.draw.shadow
+
+private const val TAG = "AllSongs"
 
 @Composable
-fun AllSongs() {
-    Surface(modifier = maxSizeModifier) {
-        Box(modifier = rootLayoutPaddingModifier) {
-            Column(modifier = maxWidthModifier.padding(top = 16.dp)) {
-                createPageTitle()
+fun AllSongs(musicFiles: MutableList<PlayListItem>) {
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+                CreatePageTitle()
                 Spacer(modifier = Modifier.preferredHeight(32.dp))
-                createAlbumArt()
+                with(this@Box) {
+                    CreateAlbumArt(modifier = Modifier.align(alignment = Alignment.Center))
+                }
                 Spacer(modifier = Modifier.preferredHeight(32.dp))
-                createSongsList()
+                CreateSongsList(musicFiles)
             }
         }
     }
 }
 
 @Composable
-fun createSongsList() {
-    val selectedSong = remember { mutableStateOf(-1) }
+fun CreateSongsList(songs: MutableList<PlayListItem>) {
+    val selectedSongState: MutableState<PlayListItem?> = remember { mutableStateOf(null) }
+    Log.d(TAG, "createSongsList: ")
 
-    val list = mutableListOf<String>("A", "B", "C")
-    LazyColumnForIndexed(items = list) { index, item ->
+    LazyColumn {
+        itemsIndexed(items = songs, itemContent = { index, item ->
+            CreateListItem(selectedSongState, index, songs)
+        })
+    }
+}
 
-        val rowModifier =
-            if (selectedSong.value == index) maxWidthModifier.background(
-                MaterialTheme.colors.background,
-                RoundedCornerShape(8.dp)
+@Composable
+fun CreateListItem(
+    selectedSongState: MutableState<PlayListItem?>,
+    index: Int,
+    items: MutableList<PlayListItem>
+) {
+    Log.d(TAG, "createListItem: ")
+
+    val rowModifier =
+        if (selectedSongState.value == items[index]) Modifier.fillMaxWidth().background(
+            MaterialTheme.colors.background,
+            RoundedCornerShape(8.dp)
+        ).padding(16.dp)
+        else Modifier.fillMaxWidth().padding(16.dp)
+
+    Row(modifier = rowModifier) {
+        Column(
+            Modifier.weight(1f).align(Alignment.CenterVertically)
+        ) {
+            Text(
+                text = items[index].songTitle,
+                color = MaterialTheme.colors.onBackground,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 2,
+                style = typography.subtitle1
             )
-                .padding(8.dp)
-            else maxWidthModifier.padding(8.dp)
-
-        Row(modifier = rowModifier) {
-            Column(
-                Modifier.weight(1f).gravity(Alignment.CenterVertically)
-            ) {
-                Text(text = item, style = typography.subtitle1)
-                Text(text = item, style = typography.caption)
-            }
-
-            if (selectedSong.value == index) createPauseButton(selectedSong, index)
-            else createPlayButton(selectedSong, index)
+            //   Text(text = items[index].artist, style = typography.caption)
+            //   Text(text = items[index].album, style = typography.caption)
+            Text(
+                text = "${items[index].rawUri}", style = typography.overline, maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = DateUtils.formatElapsedTime(items[index].duration / 1000L),
+                style = typography.caption
+            )
         }
+        CreateActionButton(selectedSongState, index, items)
     }
 }
 
 @Composable
-fun createPauseButton(selectedSong: MutableState<Int>, index: Int) {
-    val contentModifier = Modifier
-        .preferredSize(48.dp, 48.dp)
-        .drawShadow(4.dp, CircleShape)
-        .clickable(onClick = {
-            selectedSong.value = -1
-        })
-    Surface(
-        color = MaterialTheme.colors.primary,
-        shape = CircleShape,
-        modifier = contentModifier
-    ) {
-        Image(
-            colorFilter = ColorFilter.tint(MaterialTheme.colors.onBackground),
-            modifier = Modifier.size(20.dp, 20.dp).gravity(Alignment.End),
-            asset = vectorResource(id = R.drawable.ic_pause_24dp)
+fun CreateActionButton(
+    selectedSongState: MutableState<PlayListItem?>,
+    index: Int,
+    items: MutableList<PlayListItem>
+) {
+
+    val buttonColor =
+        if (selectedSongState.value == items[index]) MaterialTheme.colors.primary
+        else MaterialTheme.colors.surface
+
+    FloatingActionButton(
+        backgroundColor = buttonColor,
+        contentColor = MaterialTheme.colors.onBackground,
+        onClick = {
+            if (items[index].playbackState == PlayListItem.PlaybackState.Playing) {
+                items.forEachIndexed { index, playListItem ->
+                    playListItem.playbackState = null
+                    items[index] = playListItem
+                }
+                val item = items[index].copy()
+                item.playbackState = PlayListItem.PlaybackState.Paused
+                items[index] = item
+                selectedSongState.value = item
+            } else {
+                items.forEachIndexed { index, playListItem ->
+                    playListItem.playbackState = null
+                    items[index] = playListItem
+                }
+                val item = items[index].copy()
+                item.playbackState = PlayListItem.PlaybackState.Playing
+                items[index] = item
+                selectedSongState.value = item
+            }
+        }) {
+        Icon(
+            if (items[index].playbackState == PlayListItem.PlaybackState.Playing) vectorResource(id = R.drawable.ic_pause_24dp)
+            else Icons.Default.PlayArrow
         )
     }
 }
 
 @Composable
-fun createPlayButton(selectedSong: MutableState<Int>, index: Int) {
-    val contentModifier = Modifier
-        .preferredSize(48.dp, 48.dp)
-        .drawShadow(4.dp, CircleShape)
-        .clickable(onClick = {
-            selectedSong.value = index
-        })
-    Surface(
-        shape = CircleShape,
-        border = Border(1.dp, MaterialTheme.colors.background),
-        modifier = contentModifier
-    ) {
-        Image(
-            colorFilter = ColorFilter.tint(MaterialTheme.colors.onBackground),
-            modifier = Modifier.size(20.dp, 20.dp).gravity(Alignment.End),
-            asset = Icons.Default.PlayArrow
-        )
-    }
-}
-
-@Composable
-fun createPageTitle() {
+fun CreatePageTitle() {
     Text(
-        modifier = maxWidthModifier,
+        modifier = Modifier.fillMaxWidth(),
         textAlign = TextAlign.Center,
         text = "EVOL . FUTURE",
         style = typography.caption
@@ -127,22 +156,39 @@ fun createPageTitle() {
 }
 
 @Composable
-fun createAlbumArt() {
+fun CreateAlbumArt(modifier: Modifier) {
     Surface(
-        modifier = Modifier
-            .gravity(Alignment.CenterHorizontally)
+        modifier = modifier
             .preferredSize(180.dp, 180.dp)
-            .drawShadow(4.dp, CircleShape),
+            .shadow(4.dp, CircleShape),
         shape = CircleShape,
     ) {
         Image(
-            modifier = Modifier.drawBorder(
+            Icons.Default.Person,
+            modifier = Modifier.border(
                 1.dp,
                 MaterialTheme.colors.background,
                 CircleShape
             ).clipToBounds(),
-            asset = vectorResource(id = R.drawable.ic_launcher_background),
             contentScale = ContentScale.Crop
         )
     }
+}
+
+@Preview
+@Composable
+fun SongsListPreview() {
+    AllSongs(
+        musicFiles = mutableListOf(
+            PlayListItem(
+                songTitle = "Test Song",
+                album = "Test Album",
+                albumArt = null,
+                artist = "Test Artist",
+                duration = 100,
+                uri = Uri.parse(""),
+                rawUri = null
+            )
+        )
+    )
 }
